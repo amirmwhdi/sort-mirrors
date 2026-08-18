@@ -57,7 +57,12 @@ find_fastest_mirrors() {
 cachyos_main() {
     local version="$1"
     local pretty_name="$2"
-    local file="/etc/pacman.d/cachyos-mirrorlist"
+    
+    local mirror_files=(
+        "/etc/pacman.d/cachyos-mirrorlist"
+        "/etc/pacman.d/cachyos-v3-mirrorlist"
+        "/etc/pacman.d/cachyos-v4-mirrorlist"
+    )
     
     local cachyos_arch="x86_64"
     
@@ -72,8 +77,16 @@ cachyos_main() {
     
     check_curl || return 1
     
-    if [ ! -f "$file" ]; then
-        echo "ERROR: File $file does not exist!" >&2
+    local found_file=false
+    for f in "${mirror_files[@]}"; do
+        if [ -f "$f" ]; then
+            found_file=true
+            break
+        fi
+    done
+    
+    if [ "$found_file" = false ]; then
+        echo "ERROR: No CachyOS mirrorlist files found in /etc/pacman.d/!" >&2
         return 1
     fi
     
@@ -97,13 +110,22 @@ cachyos_main() {
     read -r answer
     
     if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
-        echo "Creating backup: ${file}.backup"
-        sudo cp "$file" "${file}.backup"
+        local mirror_content=$(echo "$fastest" | awk '{print "Server = " $2 "$repo/$arch"}')
         
-        echo "$fastest" | awk '{print "Server = " $2 "$repo/$arch"}' | sudo tee "$file" > /dev/null
+        for file in "${mirror_files[@]}"; do
+            if [ -f "$file" ]; then
+                echo "Processing: $file"
+                echo "Creating backup: ${file}.backup"
+                sudo cp "$file" "${file}.backup"
+                
+                echo "$mirror_content" | sudo tee "$file" > /dev/null
+            else
+                echo "Skipping: $file (does not exist)"
+            fi
+        done
         
-        echo "SUCCESS: $file updated with fastest CachyOS mirrors."
-        echo "Backup: ${file}.backup"
+        echo ""
+        echo "SUCCESS: CachyOS mirrorlists updated with the fastest mirrors."
         echo "Run 'sudo pacman -Syyu' to sync databases."
     else
         echo "No changes made."
