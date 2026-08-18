@@ -32,7 +32,7 @@ You don't need to install anything! Just clone the repository and run the script
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/sort-mirrors.git
+git clone https://github.com/amirmwhdi/sort-mirrors.git
 cd sort-mirrors
 ```
 
