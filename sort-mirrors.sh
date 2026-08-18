@@ -27,6 +27,9 @@ case "$ID" in
     debian|kali|mx|raspbian|deepin|pardus)
         DISTRO_ID="debian"
         ;;
+    cachyos)
+        DISTRO_ID="cachyos"
+        ;;
     arch|manjaro|endeavouros|garuda|artix|arcolinux)
         DISTRO_ID="arch"
         ;;
@@ -42,12 +45,12 @@ load_modules() {
     local module_file=""
     
     case "$distro_id" in
-        ubuntu|debian|arch)
+        ubuntu|debian|arch|cachyos)
             module_file="$MODULE_DIR/$distro_id.sh"
             ;;
         *)
             echo "ERROR: Unsupported distribution: $distro_id"
-            echo "This script supports Ubuntu, Debian, and Arch (and their derivatives) only."
+            echo "This script supports Ubuntu, Debian, Arch, and CachyOS (and their derivatives) only."
             exit 1
             ;;
     esac
@@ -70,6 +73,7 @@ load_modules "$DISTRO_ID"
 case "$DISTRO_ID" in
     ubuntu) ubuntu_main "$VERSION_ID" "$PRETTY_NAME" ;;
     debian) debian_main "$VERSION_ID" "$PRETTY_NAME" ;;
+    cachyos) cachyos_main "$VERSION_ID" "$PRETTY_NAME" ;;
     arch)   arch_main "$VERSION_ID" "$PRETTY_NAME" ;;
 esac
 

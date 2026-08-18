@@ -35,12 +35,12 @@ find_fastest_mirrors() {
     
     echo "$mirrors" | \
         xargs -P 10 -I {} bash -c '
-            url="{}"
+            url="$1"
             time=$(curl -s -o /dev/null -w "%{time_total}" --connect-timeout 2 --max-time 5 "${url}dists/${suite}/Release" 2>/dev/null)
             if [ -n "$time" ] && [ "$time" != "0.000" ]; then
                 echo "$time $url"
             fi
-        ' | \
+        ' _ {} | \
         sort -n | \
         head -n "$count"
 }
@@ -70,14 +70,14 @@ debian_main() {
         target_file="$old_mirror_file"
         echo "Using old format: $target_file"
     else
-        echo "ERROR: No sources file found!"
+        echo "ERROR: No sources file found!" >&2
         return 1
     fi
     
     local fastest=$(find_fastest_mirrors 5 "$suite")
     
     if [ -z "$fastest" ]; then
-        echo "ERROR: No valid mirrors responded."
+        echo "ERROR: No valid mirrors responded." >&2
         return 1
     fi
     

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 check_curl() {
-    command -v curl >/dev/null 2>&1 || { echo "ERROR: curl is required."; return 1; }
+    command -v curl >/dev/null 2>&1 || { echo "ERROR: curl is required." >&2; return 1; }
 }
 
 arch_main() {
@@ -19,18 +19,18 @@ arch_main() {
     check_curl || return 1
     
     if [ ! -f "$file" ]; then
-        echo "ERROR: File $file does not exist!"
+        echo "ERROR: File $file does not exist!" >&2
         return 1
     fi
     
-    echo "Fetching latest mirror list from Arch Linux..."
+    echo "Fetching latest mirror list from Arch Linux..." >&2
     local mirrors=$(curl -s "https://archlinux.org/mirrorlist/all/" | \
         grep -Eo 'Server = .*\$repo/os/\$arch' | \
         sed 's|Server = ||g; s|\$repo/os/\$arch||g' | \
         sort -u)
     
     if [ -z "$mirrors" ]; then
-        echo "WARN: Arch mirrorlist parsing failed. Falling back to raw text..."
+        echo "WARN: Arch mirrorlist parsing failed. Falling back to raw text..." >&2
         mirrors=$(curl -s "https://raw.githubusercontent.com/archlinux/arch-mirrorlist/master/mirrorlist" | \
             grep -Eo 'Server = .*\$repo/os/\$arch' | \
             sed 's|Server = ||g; s|\$repo/os/\$arch||g' | \
@@ -38,26 +38,26 @@ arch_main() {
     fi
     
     if [ -z "$mirrors" ]; then
-        echo "ERROR: Could not fetch mirror list."
+        echo "ERROR: Could not fetch mirror list." >&2
         return 1
     fi
     
     local total=$(echo "$mirrors" | wc -l)
-    echo "Testing $total mirrors (this may take a moment)..."
+    echo "Testing $total mirrors (this may take a moment)..." >&2
     
     export arch
     
     local fastest=$(echo "$mirrors" | \
         xargs -P 10 -I {} bash -c '
-            url="{}"
+            url="$1"
             time=$(curl -s -o /dev/null -w "%{time_total}" --connect-timeout 2 --max-time 5 "${url}core/os/${arch}/core.db" 2>/dev/null)
             if [ -n "$time" ] && [ "$time" != "0.000" ]; then
                 echo "$time $url"
             fi
-        ' | sort -n | head -n 5)
+        ' _ {} | sort -n | head -n 5)
     
     if [ -z "$fastest" ]; then
-        echo "ERROR: No mirrors responded."
+        echo "ERROR: No mirrors responded." >&2
         return 1
     fi
     

@@ -39,12 +39,12 @@ find_fastest_mirrors() {
     
     echo "$mirrors" | \
         xargs -P 10 -I {} bash -c '
-            url="{}"
+            url="$1"
             time=$(curl -s -o /dev/null -w "%{time_total}" --connect-timeout 2 --max-time 5 "${url}dists/${codename}/Release" 2>/dev/null)
             if [ -n "$time" ] && [ "$time" != "0.000" ]; then
                 echo "$time $url"
             fi
-        ' | \
+        ' _ {} | \
         sort -n | \
         head -n "$count"
 }
@@ -74,14 +74,14 @@ ubuntu_main() {
         target_file="$old_file"
         echo "Using old format: $old_file"
     else
-        echo "ERROR: No sources file found!"
+        echo "ERROR: No sources file found!" >&2
         return 1
     fi
     
     local fastest=$(find_fastest_mirrors 5 "$codename")
     
     if [ -z "$fastest" ]; then
-        echo "ERROR: No mirrors responded."
+        echo "ERROR: No mirrors responded." >&2
         return 1
     fi
     
